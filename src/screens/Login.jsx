@@ -1,24 +1,51 @@
-import { 
-  Dimensions, 
-  StyleSheet, 
-  Text, 
-  View, 
-  KeyboardAvoidingView, 
-  Platform, 
-  ScrollView, 
-  TouchableWithoutFeedback, 
-  Keyboard 
+import {
+  Dimensions,
+  StyleSheet,
+  Text,
+  View,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
 import React, { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import LottieView from "lottie-react-native";
 import { Button, TextInput } from "react-native-paper";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../../firebaseConfig";
+import useAuthStore from "../store/authStore";
 
 const { height, width } = Dimensions.get("window");
 
-const Login = ({navigation}) => {
+const Login = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const loginUser = useAuthStore((state) => state.login);
+  const handleLogin = async () => {
+    setLoading(true);
+    try {
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const user = userCredential.user;
+      loginUser({
+        uid: user.uid,
+        email: user.email,
+        username: user.username,
+      });
+      console.log("User logged in successfully");
+      navigation.navigate("home");
+    } catch (error) {
+      console.log("error", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -55,16 +82,23 @@ const Login = ({navigation}) => {
               />
               <Button
                 labelStyle={{
-                  fontSize: 20
+                  fontSize: 20,
                 }}
                 style={styles.button}
                 mode="contained-tonal"
+                onPress={handleLogin}
               >
                 Login
               </Button>
               <Text style={styles.redirectText}>
                 Don't have an account?
-                <Text style={{ color: "red" }} onPress={() => navigation.navigate('register')}> Register</Text>
+                <Text
+                  style={{ color: "red" }}
+                  onPress={() => navigation.navigate("register")}
+                >
+                  {" "}
+                  Register
+                </Text>
               </Text>
             </View>
           </ScrollView>
@@ -100,7 +134,7 @@ const styles = StyleSheet.create({
   button: {
     margin: width * 0.05,
     width: 100,
-    height:40,
+    height: 40,
   },
   redirectText: {
     fontSize: 20,

@@ -13,12 +13,62 @@ import {
   import { SafeAreaView } from "react-native-safe-area-context";
   import LottieView from "lottie-react-native";
   import { Button, TextInput } from "react-native-paper";
+  import { auth } from "../../firebaseConfig";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { setDoc,doc } from "firebase/firestore";
+import { db } from "../../firebaseConfig";
+import { format } from "date-fns";
   
   const { height, width } = Dimensions.get("window");
 const Register = ({navigation}) => {
     const [email, setEmail] = useState("")
     const [password, setPassword]= useState("")
     const [username, setUsername] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const formatDate = (date) => {
+      const day = date.getDate();
+      const suffix = getDaySuffix(day);
+      return `${day}${suffix} ${format(date, "MMMM yyyy")}`;
+    };
+    
+    // Function to get the correct suffix (st, nd, rd, th)
+    const getDaySuffix = (day) => {
+      if (day >= 11 && day <= 13) return "th";
+      switch (day % 10) {
+        case 1:
+          return "st";
+        case 2:
+          return "nd";
+        case 3:
+          return "rd";
+        default:
+          return "th";
+      }
+    };
+
+    const handleRegister = async() => {
+      setLoading(true);
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth,email, password);
+        const user = userCredential.user; 
+        const now = new Date();
+        const formattedDate = formatDate(now);
+        //store the register users data to firestore db
+        await setDoc(doc(db, "users", user.uid), {
+          username: username,
+          email: email,
+          createdAt: formattedDate,
+        })
+      console.log("user registered successfully", user.uid)
+      navigation.navigate("login")
+      } catch (error) {
+        console.log("error: ", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
     <KeyboardAvoidingView
@@ -65,6 +115,7 @@ const Register = ({navigation}) => {
               labelStyle={{
                 fontSize: 20
               }}
+              onPress={handleRegister}
               style={styles.button}
               mode="contained-tonal"
             >
