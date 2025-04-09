@@ -5,10 +5,21 @@ import LottieView from "lottie-react-native";
 import { FontAwesome, FontAwesome5 } from "@expo/vector-icons";
 import { useWindowDimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import socket from "../utils/socket";
 
 const Home = () => {
   const { width, height } = useWindowDimensions();
   const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    socket.emit("ping");
+    socket.on("pong", () => {
+      console.log('🎉 Pong received from server!');
+    })
+    return () => {
+      socket.off("pong")
+    }
+  }, [])
 
   useEffect(() => {
     // Ensure status bar is visible with light content
